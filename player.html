@@ -1,71 +1,131 @@
-<!doctype html>
-let startTime = null;
-let timerInterval = null;
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clicker Game</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+    #gameDiv { display: none; }
+    button { margin: 5px; padding: 10px 20px; font-size: 16px; }
+  </style>
 
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-function formatTime(ms){
-const s = Math.floor(ms/1000);
-const mm = String(Math.floor(s/60)).padStart(2,'0');
-const ss = String(s%60).padStart(2,'0');
-return `${mm}:${ss}`;
-}
+    const firebaseConfig = {
+      apiKey: "AIzaSyA5V5sZy8AeeurQMSXo-iQgkaDdXN3ecio",
+      authDomain: "clicker-dc943.firebaseapp.com",
+      databaseURL: "https://clicker-dc943-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "clicker-dc943",
+      storageBucket: "clicker-dc943.firebasestorage.app",
+      messagingSenderId: "529125125957",
+      appId: "1:529125125957:web:44771a9e3a40dc3847d82c",
+      measurementId: "G-T5QJBBDYW9"
+    };
 
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-function updateTimer(){
-if (!startTime) return;
-timerEl.innerText = formatTime(Date.now() - startTime);
-}
+    let startTime = null;
+    let timerInterval = null;
+    let count = 0;
 
+    const nicknameInput = document.createElement("input");
+    nicknameInput.placeholder = "닉네임 입력";
+    nicknameInput.id = "nickname";
 
-startBtn.addEventListener('click', ()=>{
-const nick = nicknameInput.value.trim();
-if (!nick){ alert('닉네임을 입력해주세요.'); nicknameInput.focus(); return; }
-loginDiv.style.display = 'none';
-gameDiv.style.display = 'block';
-count = 0; countDisplay.innerText = '0'; countSmall.innerText = '0';
-startTime = Date.now();
-timerEl.innerText = '00:00';
-timerInterval = setInterval(updateTimer, 250);
-clickBtn.disabled = false; stopBtn.disabled = false; startBtn.disabled = true;
-status.innerText = '플레이 중...';
-});
+    const startBtn = document.createElement("button");
+    startBtn.textContent = "시작";
 
+    const clickBtn = document.createElement("button");
+    clickBtn.textContent = "클릭";
+    clickBtn.disabled = true;
 
-clickBtn.addEventListener('click', ()=>{
-count++;
-countDisplay.innerText = count;
-countSmall.innerText = count;
-});
+    const stopBtn = document.createElement("button");
+    stopBtn.textContent = "종료";
+    stopBtn.disabled = true;
 
+    const countDisplay = document.createElement("div");
+    const timerEl = document.createElement("div");
+    const status = document.createElement("div");
 
-stopBtn.addEventListener('click', async ()=>{
-if (!startTime) return;
-const nickname = nicknameInput.value.trim();
-const durationMs = Date.now() - startTime;
+    document.body.append(
+      nicknameInput,
+      startBtn,
+      document.createElement("br"),
+      clickBtn,
+      stopBtn,
+      document.createElement("br"),
+      timerEl,
+      countDisplay,
+      status
+    );
 
+    function formatTime(ms) {
+      const s = Math.floor(ms / 1000);
+      const mm = String(Math.floor(s / 60)).padStart(2, "0");
+      const ss = String(s % 60).padStart(2, "0");
+      return `${mm}:${ss}`;
+    }
 
-// plays 노드에 push로 새 항목 추가
-try{
-const playsRef = ref(db, 'plays');
-await push(playsRef, {
-nickname: nickname,
-clicks: count,
-durationMs: durationMs,
-timestamp: Date.now()
-});
-status.style.color = 'green';
-status.innerText = '기록이 저장되었습니다. 감사합니다!';
-}catch(e){
-console.error(e);
-status.style.color = 'red';
-status.innerText = '저장에 실패했습니다. 콘솔 확인';
-}
+    function updateTimer() {
+      if (!startTime) return;
+      timerEl.innerText = formatTime(Date.now() - startTime);
+    }
 
+    startBtn.addEventListener("click", () => {
+      const nick = nicknameInput.value.trim();
+      if (!nick) {
+        alert("닉네임을 입력해주세요.");
+        nicknameInput.focus();
+        return;
+      }
+      count = 0;
+      countDisplay.innerText = "클릭 수: 0";
+      startTime = Date.now();
+      timerEl.innerText = "00:00";
+      timerInterval = setInterval(updateTimer, 250);
+      clickBtn.disabled = false;
+      stopBtn.disabled = false;
+      startBtn.disabled = true;
+      status.innerText = "플레이 중...";
+    });
 
-clearInterval(timerInterval);
-startTime = null;
-clickBtn.disabled = true; stopBtn.disabled = true; startBtn.disabled = false;
-});
-</script>
+    clickBtn.addEventListener("click", () => {
+      count++;
+      countDisplay.innerText = `클릭 수: ${count}`;
+    });
+
+    stopBtn.addEventListener("click", async () => {
+      if (!startTime) return;
+      const nickname = nicknameInput.value.trim();
+      const durationMs = Date.now() - startTime;
+      try {
+        const playsRef = ref(db, "plays");
+        await push(playsRef, {
+          nickname: nickname,
+          clicks: count,
+          durationMs: durationMs,
+          timestamp: Date.now(),
+        });
+        status.style.color = "green";
+        status.innerText = "기록이 저장되었습니다!";
+      } catch (e) {
+        console.error(e);
+        status.style.color = "red";
+        status.innerText = "저장 실패 (콘솔 확인)";
+      }
+      clearInterval(timerInterval);
+      startTime = null;
+      clickBtn.disabled = true;
+      stopBtn.disabled = true;
+      startBtn.disabled = false;
+    });
+  </script>
+</head>
+<body>
 </body>
 </html>
