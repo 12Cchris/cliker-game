@@ -1,20 +1,13 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Clicker Game</title>
-  <style>
-    body { font-family: sans-serif; text-align: center; margin-top: 50px; }
-    #gameDiv { display: none; }
-    button { margin: 5px; padding: 10px 20px; font-size: 16px; }
-  </style>
-
-  <!-- Firebase SDK -->
+  <meta charset="UTF-8">
+  <title>클리커 게임</title>
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+    // 🔹 Firebase 설정 (당신 프로젝트 정보)
     const firebaseConfig = {
       apiKey: "AIzaSyA5V5sZy8AeeurQMSXo-iQgkaDdXN3ecio",
       authDomain: "clicker-dc943.firebaseapp.com",
@@ -29,103 +22,86 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    // 🔹 클릭 게임 로직
+    let count = 0;
     let startTime = null;
     let timerInterval = null;
-    let count = 0;
-
-    const nicknameInput = document.createElement("input");
-    nicknameInput.placeholder = "닉네임 입력";
-    nicknameInput.id = "nickname";
-
-    const startBtn = document.createElement("button");
-    startBtn.textContent = "시작";
-
-    const clickBtn = document.createElement("button");
-    clickBtn.textContent = "클릭";
-    clickBtn.disabled = true;
-
-    const stopBtn = document.createElement("button");
-    stopBtn.textContent = "종료";
-    stopBtn.disabled = true;
-
-    const countDisplay = document.createElement("div");
-    const timerEl = document.createElement("div");
-    const status = document.createElement("div");
-
-    document.body.append(
-      nicknameInput,
-      startBtn,
-      document.createElement("br"),
-      clickBtn,
-      stopBtn,
-      document.createElement("br"),
-      timerEl,
-      countDisplay,
-      status
-    );
 
     function formatTime(ms) {
       const s = Math.floor(ms / 1000);
-      const mm = String(Math.floor(s / 60)).padStart(2, "0");
-      const ss = String(s % 60).padStart(2, "0");
+      const mm = String(Math.floor(s / 60)).padStart(2, '0');
+      const ss = String(s % 60).padStart(2, '0');
       return `${mm}:${ss}`;
     }
 
     function updateTimer() {
       if (!startTime) return;
-      timerEl.innerText = formatTime(Date.now() - startTime);
+      document.getElementById('timer').innerText = formatTime(Date.now() - startTime);
     }
 
-    startBtn.addEventListener("click", () => {
-      const nick = nicknameInput.value.trim();
+    window.startGame = function () {
+      const nick = document.getElementById('nickname').value.trim();
       if (!nick) {
-        alert("닉네임을 입력해주세요.");
-        nicknameInput.focus();
+        alert('닉네임을 입력해주세요.');
         return;
       }
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('game').style.display = 'block';
       count = 0;
-      countDisplay.innerText = "클릭 수: 0";
+      document.getElementById('count').innerText = count;
       startTime = Date.now();
-      timerEl.innerText = "00:00";
+      document.getElementById('timer').innerText = '00:00';
       timerInterval = setInterval(updateTimer, 250);
-      clickBtn.disabled = false;
-      stopBtn.disabled = false;
-      startBtn.disabled = true;
-      status.innerText = "플레이 중...";
-    });
+    }
 
-    clickBtn.addEventListener("click", () => {
+    window.clickButton = function () {
       count++;
-      countDisplay.innerText = `클릭 수: ${count}`;
-    });
+      document.getElementById('count').innerText = count;
+    }
 
-    stopBtn.addEventListener("click", async () => {
+    window.stopGame = async function () {
       if (!startTime) return;
-      const nickname = nicknameInput.value.trim();
+      const nickname = document.getElementById('nickname').value.trim();
       const durationMs = Date.now() - startTime;
+
       try {
-        const playsRef = ref(db, "plays");
+        const playsRef = ref(db, 'plays');
         await push(playsRef, {
           nickname: nickname,
           clicks: count,
           durationMs: durationMs,
-          timestamp: Date.now(),
+          timestamp: Date.now()
         });
-        status.style.color = "green";
-        status.innerText = "기록이 저장되었습니다!";
+        document.getElementById('status').innerText = '기록이 저장되었습니다. 감사합니다!';
+        document.getElementById('status').style.color = 'green';
       } catch (e) {
         console.error(e);
-        status.style.color = "red";
-        status.innerText = "저장 실패 (콘솔 확인)";
+        document.getElementById('status').innerText = '저장에 실패했습니다.';
+        document.getElementById('status').style.color = 'red';
       }
+
       clearInterval(timerInterval);
       startTime = null;
-      clickBtn.disabled = true;
-      stopBtn.disabled = true;
-      startBtn.disabled = false;
-    });
+      document.getElementById('game').style.display = 'none';
+      document.getElementById('login').style.display = 'block';
+    }
   </script>
 </head>
-<body>
+
+<body style="font-family: sans-serif; text-align: center; margin-top: 60px;">
+  <h1>🔥 클릭 게임 🔥</h1>
+
+  <div id="login">
+    <input id="nickname" placeholder="닉네임 입력" />
+    <button onclick="startGame()">시작</button>
+  </div>
+
+  <div id="game" style="display:none;">
+    <p>⏱ <span id="timer">00:00</span></p>
+    <h2>클릭 수: <span id="count">0</span></h2>
+    <button onclick="clickButton()">클릭!</button>
+    <button onclick="stopGame()">종료</button>
+    <p id="status"></p>
+  </div>
 </body>
 </html>
