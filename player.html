@@ -1,0 +1,71 @@
+<!doctype html>
+let startTime = null;
+let timerInterval = null;
+
+
+function formatTime(ms){
+const s = Math.floor(ms/1000);
+const mm = String(Math.floor(s/60)).padStart(2,'0');
+const ss = String(s%60).padStart(2,'0');
+return `${mm}:${ss}`;
+}
+
+
+function updateTimer(){
+if (!startTime) return;
+timerEl.innerText = formatTime(Date.now() - startTime);
+}
+
+
+startBtn.addEventListener('click', ()=>{
+const nick = nicknameInput.value.trim();
+if (!nick){ alert('닉네임을 입력해주세요.'); nicknameInput.focus(); return; }
+loginDiv.style.display = 'none';
+gameDiv.style.display = 'block';
+count = 0; countDisplay.innerText = '0'; countSmall.innerText = '0';
+startTime = Date.now();
+timerEl.innerText = '00:00';
+timerInterval = setInterval(updateTimer, 250);
+clickBtn.disabled = false; stopBtn.disabled = false; startBtn.disabled = true;
+status.innerText = '플레이 중...';
+});
+
+
+clickBtn.addEventListener('click', ()=>{
+count++;
+countDisplay.innerText = count;
+countSmall.innerText = count;
+});
+
+
+stopBtn.addEventListener('click', async ()=>{
+if (!startTime) return;
+const nickname = nicknameInput.value.trim();
+const durationMs = Date.now() - startTime;
+
+
+// plays 노드에 push로 새 항목 추가
+try{
+const playsRef = ref(db, 'plays');
+await push(playsRef, {
+nickname: nickname,
+clicks: count,
+durationMs: durationMs,
+timestamp: Date.now()
+});
+status.style.color = 'green';
+status.innerText = '기록이 저장되었습니다. 감사합니다!';
+}catch(e){
+console.error(e);
+status.style.color = 'red';
+status.innerText = '저장에 실패했습니다. 콘솔 확인';
+}
+
+
+clearInterval(timerInterval);
+startTime = null;
+clickBtn.disabled = true; stopBtn.disabled = true; startBtn.disabled = false;
+});
+</script>
+</body>
+</html>
