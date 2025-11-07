@@ -2,48 +2,71 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>A 전용 비밀번호 페이지</title>
+  <title>관리자 페이지</title>
   <script type="module">
-    // Firebase SDK 불러오기
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // Firebase 설정
     const firebaseConfig = {
-      databaseURL: "https://clicker-dc943-default-rtdb.asia-southeast1.firebasedatabase.app"
+      apiKey: "AIzaSyA5V5sZy8AeeurQMSXo-iQgkaDdXN3ecio",
+      authDomain: "clicker-dc943.firebaseapp.com",
+      databaseURL: "https://clicker-dc943-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "clicker-dc943",
+      storageBucket: "clicker-dc943.firebasestorage.app",
+      messagingSenderId: "529125125957",
+      appId: "1:529125125957:web:44771a9e3a40dc3847d82c",
+      measurementId: "G-T5QJBBDYW9"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    async function checkPassword() {
-      const input = document.getElementById("password").value.trim();
+    window.loginAdmin = async function () {
+      const inputPw = document.getElementById('password').value.trim();
       const dbRef = ref(db);
 
-      try {
-        const snapshot = await get(child(dbRef, "admin/password"));
-        if (snapshot.exists()) {
-          const correct = snapshot.val();
-          if (input === correct) {
-            alert("접속 성공! A 전용 페이지로 이동합니다.");
-            window.location.href = "a.html"; // 이동할 페이지
-          } else {
-            alert("비밀번호가 틀렸습니다.");
-          }
-        } else {
-          alert("비밀번호 데이터가 없습니다.");
-        }
-      } catch (error) {
-        console.error(error);
-        alert("오류가 발생했습니다. 콘솔을 확인하세요.");
+      const snapshot = await get(child(dbRef, 'admin/password'));
+      if (snapshot.exists() && snapshot.val() === inputPw) {
+        document.getElementById('loginDiv').style.display = 'none';
+        document.getElementById('dataDiv').style.display = 'block';
+        loadData();
+      } else {
+        alert('비밀번호가 틀렸습니다.');
       }
+    };
+
+    async function loadData() {
+      const snapshot = await get(ref(db, 'plays'));
+      const dataContainer = document.getElementById('data');
+      dataContainer.innerHTML = '';
+
+      if (!snapshot.exists()) {
+        dataContainer.innerHTML = '<p>기록이 없습니다.</p>';
+        return;
+      }
+
+      const data = snapshot.val();
+      Object.values(data).forEach(p => {
+        const time = (p.durationMs / 1000).toFixed(1);
+        const item = document.createElement('p');
+        item.textContent = `${p.nickname} — ${p.clicks}회 (${time}초)`;
+        dataContainer.appendChild(item);
+      });
     }
   </script>
 </head>
-<body style="font-family: sans-serif; text-align: center; margin-top: 100px;">
-  <h1>A 전용 비밀번호 페이지</h1>
-  <input type="password" id="password" placeholder="비밀번호 입력" />
-  <button onclick="checkPassword()">확인</button>
+
+<body style="font-family:sans-serif; text-align:center; margin-top:60px;">
+  <h1>관리자 전용</h1>
+
+  <div id="loginDiv">
+    <input id="password" type="password" placeholder="비밀번호 입력" />
+    <button onclick="loginAdmin()">접속</button>
+  </div>
+
+  <div id="dataDiv" style="display:none;">
+    <h3>플레이 기록</h3>
+    <div id="data"></div>
+  </div>
 </body>
 </html>
-
