@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>클리커 게임</title>
+  <style>
+    body {
+      font-family: "Pretendard", sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #f9d423, #ff4e50);
+      color: #fff;
+      text-align: center;
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 40px;
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+    }
+    .btn {
+      display: inline-block;
+      margin: 10px;
+      padding: 15px 30px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 2px solid white;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 1.2rem;
+      text-decoration: none;
+      transition: 0.3s;
+    }
+    .btn:hover {
+      background: white;
+      color: #ff4e50;
+      transform: scale(1.05);
+    }
+    footer {
+      position: absolute;
+      bottom: 15px;
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎮 클릭커 게임에 오신 걸 환영합니다!</h1>
+  <a href="player.html" class="btn">플레이어 시작하기</a>
+  <a href="admin.html" class="btn">관리자 페이지</a>
+  <footer>© 2025 Clicker Game Project</footer>
+</body>
+</html>
