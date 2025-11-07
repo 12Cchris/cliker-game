@@ -44,4 +44,74 @@
     document.body.append(passDiv, status, dataDiv);
     passDiv.append(passInput, passBtn);
 
-    // 관
+    // 관리자 비밀번호 확인
+    passBtn.addEventListener("click", async () => {
+      const inputPass = passInput.value.trim();
+      if (!inputPass) return alert("비밀번호를 입력하세요.");
+      status.innerText = "확인 중...";
+
+      try {
+        const snapshot = await get(child(ref(db), "admin/password"));
+        const realPass = snapshot.exists() ? snapshot.val() : null;
+        if (realPass && inputPass === realPass) {
+          status.style.color = "green";
+          status.innerText = "접속 성공!";
+          passDiv.style.display = "none";
+          dataDiv.style.display = "block";
+          loadData();
+        } else {
+          status.style.color = "red";
+          status.innerText = "비밀번호가 틀렸습니다.";
+        }
+      } catch (err) {
+        console.error(err);
+        status.innerText = "오류 발생";
+      }
+    });
+
+    // 기록 불러오기
+    async function loadData() {
+      const table = document.createElement("table");
+      table.innerHTML = `
+        <tr>
+          <th>닉네임</th>
+          <th>클릭 수</th>
+          <th>플레이 시간</th>
+          <th>저장 시각</th>
+        </tr>
+      `;
+
+      try {
+        const snapshot = await get(child(ref(db), "plays"));
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          const rows = Object.values(data).sort((a, b) => b.timestamp - a.timestamp);
+          for (const row of rows) {
+            const tr = document.createElement("tr");
+            const durationSec = Math.floor(row.durationMs / 1000);
+            const min = String(Math.floor(durationSec / 60)).padStart(2, "0");
+            const sec = String(durationSec % 60).padStart(2, "0");
+            const time = `${min}:${sec}`;
+            const date = new Date(row.timestamp).toLocaleString("ko-KR");
+            tr.innerHTML = `
+              <td>${row.nickname}</td>
+              <td>${row.clicks}</td>
+              <td>${time}</td>
+              <td>${date}</td>
+            `;
+            table.appendChild(tr);
+          }
+          dataDiv.append(table);
+        } else {
+          dataDiv.innerText = "저장된 기록이 없습니다.";
+        }
+      } catch (err) {
+        console.error(err);
+        dataDiv.innerText = "데이터 불러오기 실패.";
+      }
+    }
+  </script>
+</head>
+<body>
+</body>
+</html>
