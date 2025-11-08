@@ -56,17 +56,23 @@
         }
 
         const data = snapshot.val();
-        Object.keys(data).forEach(key => {
+
+        // 최신 기록이 위로 오도록 timestamp 기준으로 정렬
+        const sortedKeys = Object.keys(data).sort((a, b) => data[b].timestamp - data[a].timestamp);
+
+        sortedKeys.forEach(key => {
           const p = data[key];
           const time = (p.durationMs / 1000).toFixed(1);
 
-          const item = document.createElement('p');
+          const item = document.createElement('div');
           item.style.display = 'flex';
           item.style.justifyContent = 'space-between';
           item.style.alignItems = 'center';
-          item.style.marginBottom = '5px';
-          item.style.maxWidth = '400px';
           item.style.margin = '5px auto';
+          item.style.padding = '4px 8px';
+          item.style.maxWidth = '400px';
+          item.style.background = '#f0f0f0';
+          item.style.borderRadius = '6px';
 
           const text = document.createElement('span');
           text.textContent = `${p.nickname} — ${p.clicks}회 (${time}초)`;
@@ -77,8 +83,9 @@
           delBtn.style.color = 'white';
           delBtn.style.border = 'none';
           delBtn.style.borderRadius = '6px';
-          delBtn.style.padding = '2px 6px';
+          delBtn.style.padding = '4px 8px';
           delBtn.style.cursor = 'pointer';
+          delBtn.style.fontSize = '0.9rem';
           delBtn.onclick = async () => {
             if (!confirm('이 기록을 삭제하시겠습니까?')) return;
             try {
@@ -135,4 +142,3 @@
   </div>
 </body>
 </html>
-
