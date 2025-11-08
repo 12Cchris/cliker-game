@@ -46,7 +46,10 @@
       }
 
       const data = snapshot.val();
-      Object.values(data).forEach(p => {
+      console.log(data); // 데이터 확인용
+
+      Object.keys(data).forEach(key => {
+        const p = data[key];
         const time = (p.durationMs / 1000).toFixed(1);
         const item = document.createElement('p');
         item.textContent = `${p.nickname} — ${p.clicks}회 (${time}초)`;
