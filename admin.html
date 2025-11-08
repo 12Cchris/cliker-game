@@ -5,7 +5,8 @@
   <title>관리자 페이지</title>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, get, child, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getDatabase, ref, get, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyA5V5sZy8AeeurQMSXo-iQgkaDdXN3ecio",
@@ -19,26 +20,24 @@
     };
 
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getDatabase(app);
+
     let adminLoggedIn = false;
 
     window.loginAdmin = async function () {
-      const inputPw = document.getElementById('password').value.trim();
-      const dbRef = ref(db);
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
 
       try {
-        const snapshot = await get(child(dbRef, 'admin/password'));
-        if (snapshot.exists() && snapshot.val() === inputPw) {
-          adminLoggedIn = true;
-          document.getElementById('loginDiv').style.display = 'none';
-          document.getElementById('dataDiv').style.display = 'block';
-          loadData();
-        } else {
-          alert('비밀번호가 틀렸습니다.');
-        }
-      } catch (e) {
-        console.error(e);
-        alert('데이터를 불러올 수 없습니다.');
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        adminLoggedIn = true;
+        document.getElementById('loginDiv').style.display = 'none';
+        document.getElementById('dataDiv').style.display = 'block';
+        loadData();
+      } catch (error) {
+        console.error(error);
+        alert('로그인 실패: 이메일 또는 비밀번호를 확인하세요.');
       }
     };
 
@@ -57,8 +56,8 @@
 
         const data = snapshot.val();
 
-        // 최신 기록이 위로 오도록 timestamp 기준으로 정렬
-        const sortedKeys = Object.keys(data).sort((a, b) => data[b].timestamp - data[a].timestamp);
+        // 최신 기록이 위로 오도록 timestamp 기준 정렬
+        const sortedKeys = Object.keys(data).sort((a,b) => data[b].timestamp - data[a].timestamp);
 
         sortedKeys.forEach(key => {
           const p = data[key];
@@ -128,7 +127,8 @@
   <h1>관리자 전용</h1>
 
   <div id="loginDiv">
-    <input id="password" type="password" placeholder="비밀번호 입력" />
+    <input id="email" type="email" placeholder="이메일 입력" /><br><br>
+    <input id="password" type="password" placeholder="비밀번호 입력" /><br><br>
     <button onclick="loginAdmin()">접속</button>
   </div>
 
