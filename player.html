@@ -93,33 +93,11 @@
   .auto-glow { animation: autoClickGlow 1s infinite alternate; }
   @keyframes autoClickGlow { 0% { box-shadow: 0 0 5px rgba(0,255,100,0.4); } 100% { box-shadow: 0 0 20px rgba(0,255,100,0.9); } }
 
-  #game {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  #gameButtons {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  #countDisplay {
-    font-size: 0.9rem;
-    color: #555;
-  }
-  #pointsDisplay {
-    font-size: 2rem;
-    color: #333;
-  }
-
-  #shopItems {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
+  #game { display: flex; flex-direction: column; align-items: center; }
+  #gameButtons { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
+  #countDisplay { font-size: 0.9rem; color: #555; }
+  #pointsDisplay { font-size: 2rem; color: #333; }
+  #shopItems { display: flex; flex-wrap: wrap; justify-content: center; }
 </style>
 
 <script type="module">
@@ -148,6 +126,7 @@ let timerInterval = null;
 let boostActive = false;
 let superActive = false;
 let upgrades = {};
+let autoclickInterval = null;
 
 const shopItems = {
   autoclick: { name: "자동 클릭기", prices: [500, 1000, 1500] },
@@ -174,8 +153,15 @@ function updateDisplay(){
   document.getElementById('points').innerText = points;
 }
 
-function formatTime(ms){ const s=Math.floor(ms/1000); return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
-function updateTimer(){ if(!startTime) return; document.getElementById('timer').innerText=formatTime(Date.now()-startTime); }
+function formatTime(ms){
+  const s=Math.floor(ms/1000);
+  return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+}
+
+function updateTimer(){
+  if(!startTime) return;
+  document.getElementById('timer')?.innerText = formatTime(Date.now()-startTime);
+}
 
 async function loadUserData(){
   const userRef = ref(db, `users/${nickname}`);
@@ -185,29 +171,44 @@ async function loadUserData(){
     points = data.points||0;
     upgrades = data.upgrades||{};
   } else {
-    let initialUpgrades={}; Object.keys(shopItems).forEach(k=>initialUpgrades[k]=0);
+    let initialUpgrades={};
+    Object.keys(shopItems).forEach(k=>initialUpgrades[k]=0);
     await set(userRef,{points:0,upgrades:initialUpgrades});
     points=0; upgrades=initialUpgrades;
   }
   updateDisplay();
 }
 
-window.clickButton=function(){
-  let gain=1;
-  if(boostActive) gain*=3;
-  if(superActive) gain*=2;
-  if(upgrades.doubleClick>=1) gain*=(1+upgrades.doubleClick);
-  count+=gain; points+=gain;
+async function saveUserData(){
+  if(!nickname) return;
+  try {
+    await set(ref(db, `users/${nickname}`), { points: points, upgrades: upgrades });
+  } catch(e){ console.error("데이터 저장 실패", e); }
+}
+
+window.clickButton = function(){
+  let gain = 1;
+  if(boostActive) gain *= 3;
+  if(superActive) gain *= 2;
+  if(upgrades.doubleClick>=1) gain *= (1+upgrades.doubleClick);
+
+  count += gain;
+  points += gain;
   updateDisplay();
+
+  saveUserData();
 };
 
-window.stopGame=function(){
+window.stopGame = function(){
   clearInterval(timerInterval);
   startTime=null; boostActive=false; superActive=false;
   document.body.classList.remove("boost","super");
   document.getElementById('game').style.display='none';
   document.getElementById('login').style.display='block';
   upgrades=Object.fromEntries(Object.keys(shopItems).map(k=>[k,0]));
+  clearInterval(autoclickInterval);
+
+  saveUserData();
 };
 
 window.toggleShop=function(){
@@ -242,21 +243,21 @@ window.buyItem=function(itemKey){
   updateDisplay();
   renderShop();
   applyUpgrades();
+  saveUserData();
 
-  // 1회용 버프 구매 시 즉시 활성화
-  if(item.oneTime){
-    activateBuff(itemKey === "boost10s" ? "boost" : "super");
-  }
+  if(item.oneTime) activateBuff(itemKey==="boost10s"?"boost":"super");
 };
 
 function applyUpgrades(){
   const clickBtn=document.querySelector('.click-btn');
   clickBtn.classList.remove("auto-glow","double","sparkle");
+
   if(upgrades.autoclick>=1){ 
     clickBtn.classList.add('auto-glow'); 
-    clearInterval(window.autoclickInterval); 
-    window.autoclickInterval=setInterval(()=>clickButton(),1000/(1+upgrades.autoclick-1)); 
-  }
+    clearInterval(autoclickInterval); 
+    autoclickInterval=setInterval(()=>clickButton(),1000/(1+upgrades.autoclick-1)); 
+  } else clearInterval(autoclickInterval);
+
   if(upgrades.doubleClick>=1) clickBtn.classList.add('double');
   if(upgrades.sparkleTheme>=1) clickBtn.classList.add('sparkle');
 
@@ -264,20 +265,18 @@ function applyUpgrades(){
   if(upgrades.superBoost>=1) createBuffButton("30초 슈퍼버프",30000,"super");
 }
 
-// 중복 생성 방지, 이미 버튼 존재 시 생성하지 않음
 function createBuffButton(label,duration,type){
   const gameDiv = document.getElementById("game");
-  let btn = document.getElementById(type + "-btn");
-
+  let btn = document.getElementById(type+"-btn");
   if(!btn){
-    btn = document.createElement("button");
-    btn.id = type + "-btn";
-    btn.textContent = label;
-    btn.style.background = (type === "super") ? "#ffb300" : "#fdcb6e";
+    btn=document.createElement("button");
+    btn.id=type+"-btn";
+    btn.textContent=label;
+    btn.style.background = (type==="super")?"#ffb300":"#fdcb6e";
     btn.style.color = "#2d3436";
     btn.style.marginTop = "10px";
     btn.style.borderRadius = "8px";
-    btn.onclick = () => activateBuff(type);
+    btn.onclick = ()=>activateBuff(type);
     gameDiv.appendChild(btn);
   }
 }
@@ -292,7 +291,7 @@ function activateBuff(type){
     if(type==="boost") boostActive=false;
     if(type==="super") superActive=false;
     document.body.classList.remove(type);
-  },type==="boost"?10000:30000);
+  }, type==="boost"?10000:30000);
 }
 </script>
 </head>
@@ -323,5 +322,7 @@ function activateBuff(type){
 </div>
 </body>
 </html>
+
+
 
 
