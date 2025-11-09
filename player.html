@@ -90,15 +90,11 @@
 
     .auto-glow { animation: autoClickGlow 1s infinite alternate; }
     @keyframes autoClickGlow { 0% { box-shadow: 0 0 5px rgba(0,255,100,0.4); } 100% { box-shadow: 0 0 20px rgba(0,255,100,0.9); } }
-
-    /* 포인트 강조 */
-    #points { font-weight: bold; font-size: 1.5rem; color: #0984e3; }
-    #count { font-size: 1.2rem; }
   </style>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, get, set, update, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyA5V5sZy8AeeurQMSXo-iQgkaDdXN3ecio",
@@ -126,8 +122,8 @@
     const shopItems = {
       autoclick: { name: "자동 클릭기", prices: [500, 1000, 1500] },
       doubleClick: { name: "2배 클릭 강화", prices: [500, 1500, 3000] },
-      boost10s: { name: "10초 버프", prices: [100, 300, 500], oneTime:true },
-      superBoost: { name: "30초 슈퍼버프", prices: [1000, 3000, 5000], oneTime:true },
+      boost10s: { name: "10초 버프", prices: [100, 300, 500], oneTime: true },
+      superBoost: { name: "30초 슈퍼버프", prices: [1000, 3000, 5000], oneTime: true },
       sparkleTheme: { name: "반짝 테마", prices: [500, 1000, 2000] }
     };
 
@@ -149,102 +145,96 @@
 
     function formatTime(ms) {
       const s = Math.floor(ms / 1000);
-      const mm = String(Math.floor(s / 60)).padStart(2,'0');
-      const ss = String(s % 60).padStart(2,'0');
+      const mm = String(Math.floor(s / 60)).padStart(2, '0');
+      const ss = String(s % 60).padStart(2, '0');
       return `${mm}:${ss}`;
     }
 
-    function updateTimer() { if(!startTime) return; document.getElementById('timer').innerText = formatTime(Date.now()-startTime); }
+    function updateTimer() {
+      if (!startTime) return;
+      document.getElementById('timer').innerText = formatTime(Date.now() - startTime);
+    }
 
     async function loadUserData() {
       const userRef = ref(db, `users/${nickname}`);
       const snapshot = await get(userRef);
 
-      points = 0;
-      upgrades = {};
-      Object.keys(shopItems).forEach(k => upgrades[k] = 0); // 초기화
-
-      if(snapshot.exists()) {
+      if (snapshot.exists()) {
         const data = snapshot.val();
         points = data.points || 0;
-        await update(userRef, { upgrades }); // 초기화 반영
+        upgrades = data.upgrades || {};
       } else {
-        await set(userRef, { points: 0, upgrades });
+        let initialUpgrades = {};
+        Object.keys(shopItems).forEach(k => initialUpgrades[k] = 0);
+        await set(userRef, { points: 0, upgrades: initialUpgrades });
         points = 0;
+        upgrades = initialUpgrades;
       }
       updatePointDisplay();
     }
 
     function updatePointDisplay() { document.getElementById('points').innerText = points; }
 
-    window.clickButton = function() {
+    window.clickButton = function () {
       let gain = 1;
-      if(boostActive) gain *= 3;
-      if(superActive) gain *= 2;
-      if(upgrades.doubleClick>=1) gain *= (1+upgrades.doubleClick);
+      if (boostActive) gain *= 3;
+      if (superActive) gain *= 2;
+      if (upgrades.doubleClick >= 1) gain *= (1 + upgrades.doubleClick);
       count += gain;
       points += gain;
+      document.getElementById('points').innerText = points; // 포인트 강조
       document.getElementById('count').innerText = count;
-      updatePointDisplay();
     };
 
-    window.stopGame = async function() {
-      if(!startTime) return;
-      const durationMs = Date.now()-startTime;
-      try {
-        await push(ref(db,'plays'), { nickname, clicks:count, durationMs, timestamp:Date.now() });
-        await update(ref(db,`users/${nickname}`), { points, upgrades });
-        document.getElementById('status').innerText='기록이 저장되었습니다. 감사합니다!';
-        document.getElementById('status').style.color='green';
-      } catch(e) {
-        console.error(e);
-        document.getElementById('status').innerText='저장에 실패했습니다.';
-        document.getElementById('status').style.color='red';
-      }
-
+    window.stopGame = function() {
+      if (!startTime) return;
       clearInterval(timerInterval);
-      startTime=null;
-      boostActive=false;
-      superActive=false;
-      document.body.classList.remove("boost","super");
-      document.getElementById('game').style.display='none';
-      document.getElementById('login').style.display='block';
+      startTime = null;
+      boostActive = false;
+      superActive = false;
+      document.body.classList.remove("boost", "super");
+      document.getElementById('game').style.display = 'none';
+      document.getElementById('login').style.display = 'block';
+      document.getElementById('status').innerText = '게임이 종료되었습니다.';
+      document.getElementById('status').style.color = 'black';
     };
 
-    window.toggleShop = function() {
+    window.toggleShop = function () {
       const shop = document.getElementById('shop');
-      shop.style.display = (shop.style.display==='none')?'block':'none';
+      shop.style.display = shop.style.display === 'none' ? 'block' : 'none';
       renderShop();
     };
 
     async function renderShop() {
       const shopContainer = document.getElementById('shopItems');
-      shopContainer.innerHTML='';
-      Object.keys(shopItems).forEach(key=>{
+      shopContainer.innerHTML = '';
+      Object.keys(shopItems).forEach(key => {
         const item = shopItems[key];
-        const level = upgrades[key]||0;
+        const level = upgrades[key] || 0;
         const nextPrice = item.prices[level];
-        const maxed = (!item.oneTime && level>=item.prices.length) || (item.oneTime && level>=1);
-        const priceDisplay = maxed?"(최대)":"- "+nextPrice+"포인트";
+        const maxed = !item.oneTime && level >= item.prices.length;
+        const displayPrice = (item.oneTime) ? nextPrice : (maxed ? '-' : nextPrice);
+        const disabled = (item.oneTime && level >= 1) || (!item.oneTime && level >= item.prices.length) ? "disabled" : "";
         const div = document.createElement('div');
         div.classList.add('item');
-        div.innerHTML=`<p>${item.name} Lv.${level} ${priceDisplay}</p>
-                       <button class="buy-btn" ${maxed?"disabled":""} onclick="buyItem('${key}')">구매</button>`;
+        div.innerHTML = `<p>${item.name}${item.oneTime ? "" : " Lv."+level} ${maxed || (item.oneTime && level>=1) ? "(최대)" : "- " + displayPrice + "포인트"}</p>
+                         <button class="buy-btn" ${disabled} onclick="buyItem('${key}')">구매</button>`;
         shopContainer.appendChild(div);
       });
     }
 
-    window.buyItem = async function(itemKey){
+    window.buyItem = async function(itemKey) {
       const item = shopItems[itemKey];
-      let level = upgrades[itemKey]||0;
-      if(item.oneTime && level>=1) return alert("최대 레벨입니다!");
-      if(!item.oneTime && level>=item.prices.length) return alert("최대 레벨입니다!");
+      const level = upgrades[itemKey] || 0;
+      if(item.oneTime && level >= 1) return alert("이미 구매한 아이템입니다!");
+      if(!item.oneTime && level >= item.prices.length) return alert("최대 레벨입니다!");
+
       const price = item.prices[level];
-      if(points<price) return alert("포인트가 부족합니다!");
+      if(points < price) return alert("포인트가 부족합니다!");
+
       points -= price;
-      upgrades[itemKey] = level+1;
-      await set(ref(db,`users/${nickname}`), { points, upgrades });
-      alert(`${item.name}을(를) Lv.${upgrades[itemKey]}로 업그레이드했습니다!`);
+      upgrades[itemKey] = (item.oneTime ? 1 : level + 1);
+
       updatePointDisplay();
       renderShop();
       applyUpgrades();
@@ -253,31 +243,32 @@
     function applyUpgrades() {
       const clickBtn = document.querySelector('.click-btn');
       clickBtn.classList.remove("auto-glow","double","sparkle");
-      clearInterval(window.autoclickInterval);
 
-      if(upgrades.autoclick>=1){
+      if(upgrades.autoclick >=1){
         clickBtn.classList.add('auto-glow');
-        window.autoclickInterval=setInterval(()=>clickButton(),1000/(1+upgrades.autoclick-1));
+        clearInterval(window.autoclickInterval);
+        window.autoclickInterval = setInterval(()=>clickButton(),1000/(1+upgrades.autoclick-1));
       }
       if(upgrades.doubleClick>=1) clickBtn.classList.add('double');
       if(upgrades.sparkleTheme>=1) clickBtn.classList.add('sparkle');
 
-      if(upgrades.boost10s>=1) createBuffButton("10초 버프", 10000, "boost");
-      if(upgrades.superBoost>=1) createBuffButton("30초 슈퍼버프", 30000, "super");
+      if(upgrades.boost10s>=1) createBuffButton("10초 버프", 10000*upgrades.boost10s, "boost");
+      if(upgrades.superBoost>=1) createBuffButton("30초 슈퍼버프", 30000*upgrades.superBoost, "super");
     }
 
-    function createBuffButton(label,duration,type){
-      const gameDiv=document.getElementById("game");
+    function createBuffButton(label, duration, type) {
+      const gameDiv = document.getElementById("game");
       if(document.getElementById(type+"-btn")) return;
-      const btn=document.createElement("button");
-      btn.id=type+"-btn";
-      btn.textContent=label;
-      btn.style.background=(type==="super")?"#ffb300":"#fdcb6e";
-      btn.style.color="#2d3436";
+      const btn = document.createElement("button");
+      btn.id = type+"-btn";
+      btn.textContent = label;
+      btn.style.background = (type==="super")?"#ffb300":"#fdcb6e";
+      btn.style.color = "#2d3436";
       btn.style.marginTop="10px";
       btn.style.borderRadius="8px";
-      btn.onclick=()=>{
-        if((type==="boost"&&boostActive)||(type==="super"&&superActive)) return alert("이미 버프가 활성화되어 있습니다!");
+      btn.onclick = ()=>{
+        if((type==="boost" && boostActive)||(type==="super" && superActive))
+          return alert("이미 버프가 활성화되어 있습니다!");
         if(type==="boost") boostActive=true;
         if(type==="super") superActive=true;
         document.body.classList.add(type);
@@ -315,6 +306,7 @@
   </div>
 </body>
 </html>
+
 
 
 
