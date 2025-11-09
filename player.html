@@ -4,100 +4,34 @@
 <meta charset="UTF-8">
 <title>클리커 게임</title>
 <style>
-  body {
-    font-family: "Pretendard", sans-serif;
-    text-align: center;
-    margin-top: 60px;
-    background: linear-gradient(135deg, #ff9a9e, #fad0c4);
-    color: #333;
-    transition: background 0.5s ease;
-  }
-  body.boost { background: linear-gradient(135deg, #ffeaa7, #fab1a0); }
-  body.super { background: linear-gradient(135deg, #fff176, #ffca28); animation: glow 1s infinite alternate; }
-  @keyframes glow { 0% { filter: brightness(1); } 100% { filter: brightness(1.2); } }
-
-  h1 { font-size: 2.5rem; margin-bottom: 20px; }
-
-  button {
-    margin: 5px;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: 0.25s;
-  }
-  button:hover { transform: scale(1.05); }
-
-  .click-btn {
-    background: #ff7675;
-    color: white;
-    box-shadow: 0 0 10px rgba(255, 118, 117, 0.6);
-    transition: background 0.3s, box-shadow 0.3s;
-  }
-  .click-btn.double {
-    background: linear-gradient(45deg, #f9ca24, #f0932b);
-    box-shadow: 0 0 20px rgba(255, 204, 0, 0.9);
-    animation: pulse 1s infinite;
-  }
-  @keyframes pulse { 0% { box-shadow: 0 0 10px rgba(255, 204, 0, 0.5); } 50% { box-shadow: 0 0 20px rgba(255, 204, 0, 1); } 100% { box-shadow: 0 0 10px rgba(255, 204, 0, 0.5); } }
-  .click-btn.sparkle { position: relative; overflow: hidden; }
-  .click-btn.sparkle::after {
-    content: "";
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, transparent 70%);
-    animation: sparkle 1.5s infinite linear;
-  }
-  @keyframes sparkle { 0% { transform: translate(0,0) rotate(0deg); } 100% { transform: translate(50%,50%) rotate(360deg); } }
-
-  .stop-btn { background: #636e72; color: white; }
-  .shop-btn { background: #0984e3; color: white; }
-
-  .shop {
-    display: none;
-    margin-top: 30px;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 12px;
-    padding: 20px;
-    width: 360px;
-    margin-left: auto;
-    margin-right: auto;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  }
-  .shop h3 { margin-bottom: 15px; }
-  .item {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    margin: 5px;
-    background: #fff;
-    border-radius: 8px;
-    padding: 10px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    min-width: 100px;
-  }
-  .item p { margin: 0; font-weight: 500; text-align: center; }
-  .buy-btn {
-    background: #00b894;
-    color: white;
-    padding: 6px 12px;
-    border-radius: 6px;
-  }
-  .buy-btn:disabled { background: #b2bec3; cursor: default; }
-
-  .auto-glow { animation: autoClickGlow 1s infinite alternate; }
-  @keyframes autoClickGlow { 0% { box-shadow: 0 0 5px rgba(0,255,100,0.4); } 100% { box-shadow: 0 0 20px rgba(0,255,100,0.9); } }
-
-  #game { display: flex; flex-direction: column; align-items: center; }
-  #gameButtons { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
-  #countDisplay { font-size: 0.9rem; color: #555; }
-  #pointsDisplay { font-size: 2rem; color: #333; }
-  #shopItems { display: flex; flex-wrap: wrap; justify-content: center; }
+body { font-family: "Pretendard", sans-serif; text-align:center; margin-top:60px; background:linear-gradient(135deg,#ff9a9e,#fad0c4); color:#333; transition:background 0.5s ease; }
+body.boost { background:linear-gradient(135deg,#ffeaa7,#fab1a0); }
+body.super { background:linear-gradient(135deg,#fff176,#ffca28); animation:glow 1s infinite alternate; }
+@keyframes glow { 0%{filter:brightness(1);}100%{filter:brightness(1.2);} }
+h1 { font-size:2.5rem; margin-bottom:20px; }
+button { margin:5px; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-size:1rem; transition:0.25s; }
+button:hover { transform:scale(1.05); }
+.click-btn { background:#ff7675; color:white; box-shadow:0 0 10px rgba(255,118,117,0.6); transition:background 0.3s, box-shadow 0.3s; }
+.click-btn.double { background:linear-gradient(45deg,#f9ca24,#f0932b); box-shadow:0 0 20px rgba(255,204,0,0.9); animation:pulse 1s infinite; }
+@keyframes pulse {0%{box-shadow:0 0 10px rgba(255,204,0,0.5);}50%{box-shadow:0 0 20px rgba(255,204,0,1);}100%{box-shadow:0 0 10px rgba(255,204,0,0.5);} }
+.click-btn.sparkle { position:relative; overflow:hidden; }
+.click-btn.sparkle::after { content:""; position:absolute; top:-50%; left:-50%; width:200%; height:200%; background:radial-gradient(circle, rgba(255,255,255,0.6) 0%, transparent 70%); animation:sparkle 1.5s infinite linear; }
+@keyframes sparkle { 0%{transform:translate(0,0) rotate(0deg);}100%{transform:translate(50%,50%) rotate(360deg);} }
+.stop-btn { background:#636e72; color:white; }
+.shop-btn { background:#0984e3; color:white; }
+.shop { display:none; margin-top:30px; background:rgba(255,255,255,0.9); border-radius:12px; padding:20px; width:360px; margin-left:auto; margin-right:auto; box-shadow:0 4px 15px rgba(0,0,0,0.2); }
+.shop h3 { margin-bottom:15px; }
+.item { display:flex; flex-direction:column; justify-content:center; align-items:center; margin:5px; background:#fff; border-radius:8px; padding:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1); min-width:100px; }
+.item p { margin:0; font-weight:500; text-align:center; }
+.buy-btn { background:#00b894; color:white; padding:6px 12px; border-radius:6px; }
+.buy-btn:disabled { background:#b2bec3; cursor:default; }
+.auto-glow { animation:autoClickGlow 1s infinite alternate; }
+@keyframes autoClickGlow { 0%{box-shadow:0 0 5px rgba(0,255,100,0.4);}100%{box-shadow:0 0 20px rgba(0,255,100,0.9);} }
+#game { display:flex; flex-direction:column; align-items:center; }
+#gameButtons { display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; justify-content:center; }
+#countDisplay { font-size:0.9rem; color:#555; }
+#pointsDisplay { font-size:2rem; color:#333; }
+#shopItems { display:flex; flex-wrap:wrap; justify-content:center; }
 </style>
 
 <script type="module">
@@ -105,62 +39,34 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyA5V5sZy8AeeurQMSXo-iQgkaDdXN3ecio",
-  authDomain: "clicker-dc943.firebaseapp.com",
-  databaseURL: "https://clicker-dc943-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "clicker-dc943",
-  storageBucket: "clicker-dc943.firebasestorage.app",
-  messagingSenderId: "529125125957",
-  appId: "1:529125125957:web:44771a9e3a40dc3847d82c",
-  measurementId: "G-T5QJBBDYW9"
+  apiKey:"AIzaSyA5V5sZy8AeeurQMSXo-iQgkaDdXN3ecio",
+  authDomain:"clicker-dc943.firebaseapp.com",
+  databaseURL:"https://clicker-dc943-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"clicker-dc943",
+  storageBucket:"clicker-dc943.firebasestorage.app",
+  messagingSenderId:"529125125957",
+  appId:"1:529125125957:web:44771a9e3a40dc3847d82c",
+  measurementId:"G-T5QJBBDYW9"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-let nickname = "";
-let count = 0;
-let points = 0;
-let startTime = null;
-let timerInterval = null;
-let boostActive = false;
-let superActive = false;
-let upgrades = {};
-let autoclickInterval = null;
+let nickname="", count=0, points=0, startTime=null, timerInterval=null;
+let boostActive=false, superActive=false, upgrades={}, autoclickInterval=null;
 
 const shopItems = {
-  autoclick: { name: "자동 클릭기", prices: [500, 1000, 1500] },
-  doubleClick: { name: "2배 클릭 강화", prices: [500, 1500, 3000] },
-  boost10s: { name: "10초 버프", prices: [100, 300, 500], oneTime: true },
-  superBoost: { name: "30초 슈퍼버프", prices: [1000, 3000, 5000], oneTime: true },
-  sparkleTheme: { name: "반짝 테마", prices: [500, 1000, 2000] }
+  autoclick:{name:"자동 클릭기",prices:[500,1000,1500]},
+  doubleClick:{name:"2배 클릭 강화",prices:[500,1500,3000]},
+  boost10s:{name:"10초 버프",prices:[100,300,500],oneTime:true},
+  superBoost:{name:"30초 슈퍼버프",prices:[1000,3000,5000],oneTime:true},
+  sparkleTheme:{name:"반짝 테마",prices:[500,1000,2000]}
 };
 
-window.startGame = async function() {
-  nickname = document.getElementById('nickname').value.trim();
-  if(!nickname) return alert("닉네임을 입력해주세요.");
-  document.getElementById('login').style.display = 'none';
-  document.getElementById('game').style.display = 'flex';
-  count = 0; updateDisplay();
-  startTime = Date.now();
-  timerInterval = setInterval(updateTimer, 250);
-  await loadUserData();
-  applyUpgrades();
-};
-
-function updateDisplay(){
-  document.getElementById('count').innerText = count;
-  document.getElementById('points').innerText = points;
-}
-
-function formatTime(ms){
-  const s=Math.floor(ms/1000);
-  return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-}
-
-function updateTimer(){
-  if(!startTime) return;
-  document.getElementById('timer')?.innerText = formatTime(Date.now()-startTime);
+async function saveUserData(){
+  if(!nickname) return;
+  try{ await set(ref(db, `users/${nickname}`), {points, upgrades}); } 
+  catch(e){ console.error("저장 실패",e); }
 }
 
 async function loadUserData(){
@@ -168,54 +74,50 @@ async function loadUserData(){
   const snapshot = await get(userRef);
   if(snapshot.exists()){
     const data = snapshot.val();
-    points = data.points||0;
-    upgrades = data.upgrades||{};
-  } else {
-    let initialUpgrades={};
-    Object.keys(shopItems).forEach(k=>initialUpgrades[k]=0);
-    await set(userRef,{points:0,upgrades:initialUpgrades});
-    points=0; upgrades=initialUpgrades;
+    points=data.points||0; upgrades=data.upgrades||{};
+  }else{
+    upgrades={}; Object.keys(shopItems).forEach(k=>upgrades[k]=0);
+    points=0; await set(userRef,{points:0,upgrades:upgrades});
   }
-  updateDisplay();
+  updateDisplay(); renderShop(); applyUpgrades();
 }
 
-async function saveUserData(){
-  if(!nickname) return;
-  try {
-    await set(ref(db, `users/${nickname}`), { points: points, upgrades: upgrades });
-  } catch(e){ console.error("데이터 저장 실패", e); }
-}
+function updateDisplay(){ document.getElementById('count').innerText=count; document.getElementById('points').innerText=points; }
+function formatTime(ms){ const s=Math.floor(ms/1000); return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
+function updateTimer(){ if(!startTime) return; document.getElementById('timer')?.innerText=formatTime(Date.now()-startTime); }
+
+window.startGame = async function(){
+  nickname=document.getElementById('nickname').value.trim();
+  if(!nickname) return alert("닉네임을 입력해주세요.");
+  document.getElementById('login').style.display='none';
+  document.getElementById('game').style.display='flex';
+  count=0; updateDisplay();
+  startTime=Date.now();
+  timerInterval=setInterval(updateTimer,250);
+  await loadUserData();
+};
 
 window.clickButton = function(){
-  let gain = 1;
-  if(boostActive) gain *= 3;
-  if(superActive) gain *= 2;
-  if(upgrades.doubleClick>=1) gain *= (1+upgrades.doubleClick);
-
-  count += gain;
-  points += gain;
+  let gain=1;
+  if(boostActive) gain*=3;
+  if(superActive) gain*=2;
+  if(upgrades.doubleClick>=1) gain*=(1+upgrades.doubleClick);
+  count+=gain; points+=gain;
   updateDisplay();
-
   saveUserData();
 };
 
 window.stopGame = function(){
   clearInterval(timerInterval);
+  clearInterval(autoclickInterval);
   startTime=null; boostActive=false; superActive=false;
   document.body.classList.remove("boost","super");
   document.getElementById('game').style.display='none';
   document.getElementById('login').style.display='block';
-  upgrades=Object.fromEntries(Object.keys(shopItems).map(k=>[k,0]));
-  clearInterval(autoclickInterval);
-
   saveUserData();
 };
 
-window.toggleShop=function(){
-  const shop=document.getElementById('shop');
-  shop.style.display=(shop.style.display==='none')?'block':'none';
-  renderShop();
-};
+window.toggleShop=function(){ const shop=document.getElementById('shop'); shop.style.display=(shop.style.display==='none')?'block':'none'; renderShop(); }
 
 function renderShop(){
   const shopContainer=document.getElementById('shopItems');
@@ -226,9 +128,7 @@ function renderShop(){
     const nextPrice=item.prices[Math.min(level,item.prices.length-1)];
     const div=document.createElement('div');
     div.classList.add('item');
-    div.innerHTML=`
-      <p>${item.name} Lv.${level} - ${nextPrice}포인트</p>
-      <button class="buy-btn" onclick="buyItem('${key}')">구매</button>`;
+    div.innerHTML=`<p>${item.name} Lv.${level} - ${nextPrice}포인트</p><button class="buy-btn" onclick="buyItem('${key}')">구매</button>`;
     shopContainer.appendChild(div);
   });
 }
@@ -238,52 +138,45 @@ window.buyItem=function(itemKey){
   const level=upgrades[itemKey]||0;
   const price=item.prices[Math.min(level,item.prices.length-1)];
   if(points<price) return alert("포인트가 부족합니다!");
-  points-=price;
-  upgrades[itemKey]+=1;
-  updateDisplay();
-  renderShop();
-  applyUpgrades();
-  saveUserData();
-
+  points-=price; upgrades[itemKey]+=1;
+  updateDisplay(); renderShop(); applyUpgrades(); saveUserData();
   if(item.oneTime) activateBuff(itemKey==="boost10s"?"boost":"super");
-};
+}
 
 function applyUpgrades(){
   const clickBtn=document.querySelector('.click-btn');
   clickBtn.classList.remove("auto-glow","double","sparkle");
+  clearInterval(autoclickInterval);
 
   if(upgrades.autoclick>=1){ 
-    clickBtn.classList.add('auto-glow'); 
-    clearInterval(autoclickInterval); 
-    autoclickInterval=setInterval(()=>clickButton(),1000/(1+upgrades.autoclick-1)); 
-  } else clearInterval(autoclickInterval);
-
-  if(upgrades.doubleClick>=1) clickBtn.classList.add('double');
-  if(upgrades.sparkleTheme>=1) clickBtn.classList.add('sparkle');
+    clickBtn.classList.add("auto-glow");
+    autoclickInterval=setInterval(()=>clickButton(),1000/(1+upgrades.autoclick-1));
+  }
+  if(upgrades.doubleClick>=1) clickBtn.classList.add("double");
+  if(upgrades.sparkleTheme>=1) clickBtn.classList.add("sparkle");
 
   if(upgrades.boost10s>=1) createBuffButton("10초 버프",10000,"boost");
   if(upgrades.superBoost>=1) createBuffButton("30초 슈퍼버프",30000,"super");
 }
 
 function createBuffButton(label,duration,type){
-  const gameDiv = document.getElementById("game");
-  let btn = document.getElementById(type+"-btn");
+  const gameDiv=document.getElementById("game");
+  let btn=document.getElementById(type+"-btn");
   if(!btn){
     btn=document.createElement("button");
     btn.id=type+"-btn";
     btn.textContent=label;
-    btn.style.background = (type==="super")?"#ffb300":"#fdcb6e";
-    btn.style.color = "#2d3436";
-    btn.style.marginTop = "10px";
-    btn.style.borderRadius = "8px";
-    btn.onclick = ()=>activateBuff(type);
+    btn.style.background=(type==="super")?"#ffb300":"#fdcb6e";
+    btn.style.color="#2d3436";
+    btn.style.marginTop="10px";
+    btn.style.borderRadius="8px";
+    btn.onclick=()=>activateBuff(type);
     gameDiv.appendChild(btn);
   }
 }
 
 function activateBuff(type){
-  if((type==="boost"&&boostActive)||(type==="super"&&superActive))
-    return alert("이미 버프가 활성화되어 있습니다!");
+  if((type==="boost"&&boostActive)||(type==="super"&&superActive)) return alert("이미 버프가 활성화되어 있습니다!");
   if(type==="boost") boostActive=true;
   if(type==="super") superActive=true;
   document.body.classList.add(type);
@@ -291,31 +184,26 @@ function activateBuff(type){
     if(type==="boost") boostActive=false;
     if(type==="super") superActive=false;
     document.body.classList.remove(type);
-  }, type==="boost"?10000:30000);
+  },type==="boost"?10000:30000);
 }
 </script>
 </head>
-
 <body>
 <h1>🔥 클릭 게임 🔥</h1>
 <div id="login">
-  <input id="nickname" placeholder="닉네임 입력" />
+  <input id="nickname" placeholder="닉네임 입력"/>
   <button onclick="startGame()">시작</button>
 </div>
-
 <div id="game" style="display:none;">
   <p id="countDisplay">클릭 수: <span id="count">0</span></p>
   <h2 id="pointsDisplay">⭐ 포인트: <span id="points">0</span></h2>
-
   <div id="gameButtons">
     <button class="click-btn" onclick="clickButton()">클릭!</button>
     <button class="stop-btn" onclick="stopGame()">종료</button>
     <button class="shop-btn" onclick="toggleShop()">상점</button>
   </div>
-
   <p id="status"></p>
 </div>
-
 <div id="shop" class="shop">
   <h3>🛒 상점</h3>
   <div id="shopItems"></div>
