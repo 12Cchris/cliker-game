@@ -90,6 +90,22 @@
 
     .auto-glow { animation: autoClickGlow 1s infinite alternate; }
     @keyframes autoClickGlow { 0% { box-shadow: 0 0 5px rgba(0,255,100,0.4); } 100% { box-shadow: 0 0 20px rgba(0,255,100,0.9); } }
+
+    #game {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #countDisplay {
+      font-size: 0.9rem;
+      margin-bottom: 5px;
+      color: #555;
+    }
+    #pointsDisplay {
+      font-size: 2rem;
+      margin-bottom: 15px;
+      color: #333;
+    }
   </style>
 
   <script type="module">
@@ -120,18 +136,18 @@
     let upgrades = {};
 
     const shopItems = {
-      autoclick: { name: "자동 클릭기", prices: [500,1000,1500] },
-      doubleClick: { name: "2배 클릭 강화", prices: [500,1500,3000] },
-      boost10s: { name: "10초 버프", prices: [100,300,500], oneTime:true },
-      superBoost: { name: "30초 슈퍼버프", prices: [1000,3000,5000], oneTime:true },
-      sparkleTheme: { name: "반짝 테마", prices: [500,1000,2000] }
+      autoclick: { name: "자동 클릭기", prices: [500, 1000, 1500] },
+      doubleClick: { name: "2배 클릭 강화", prices: [500, 1500, 3000] },
+      boost10s: { name: "10초 버프", prices: [100, 300, 500], oneTime: true },
+      superBoost: { name: "30초 슈퍼버프", prices: [1000, 3000, 5000], oneTime: true },
+      sparkleTheme: { name: "반짝 테마", prices: [500, 1000, 2000] }
     };
 
     window.startGame = async function () {
       nickname = document.getElementById('nickname').value.trim();
       if (!nickname) return alert('닉네임을 입력해주세요.');
       document.getElementById('login').style.display = 'none';
-      document.getElementById('game').style.display = 'block';
+      document.getElementById('game').style.display = 'flex';
       count = 0;
       document.getElementById('count').innerText = count;
       startTime = Date.now();
@@ -148,7 +164,10 @@
       return `${mm}:${ss}`;
     }
 
-    function updateTimer() { if (!startTime) return; document.getElementById('timer').innerText = formatTime(Date.now() - startTime); }
+    function updateTimer() {
+      if (!startTime) return;
+      document.getElementById('timer').innerText = formatTime(Date.now() - startTime);
+    }
 
     async function loadUserData() {
       const userRef = ref(db, `users/${nickname}`);
@@ -160,7 +179,7 @@
       } else {
         let initialUpgrades = {};
         Object.keys(shopItems).forEach(k => initialUpgrades[k] = 0);
-        await set(userRef, { points:0, upgrades: initialUpgrades });
+        await set(userRef, { points: 0, upgrades: initialUpgrades });
         points = 0;
         upgrades = initialUpgrades;
       }
@@ -180,16 +199,7 @@
       updatePointDisplay();
     };
 
-    window.stopGame = async function () {
-      if (!startTime) return;
-      const durationMs = Date.now() - startTime;
-      try {
-        await push(ref(db, 'plays'), { nickname, clicks: count, durationMs, timestamp: Date.now() });
-        // 업그레이드 초기화
-        let resetUpgrades = {};
-        Object.keys(shopItems).forEach(k => resetUpgrades[k] = 0);
-        await update(ref(db, `users/${nickname}`), { points, upgrades: resetUpgrades });
-      } catch(e) { console.error(e); }
+    window.stopGame = function () {
       clearInterval(timerInterval);
       startTime = null;
       boostActive = false;
@@ -197,42 +207,40 @@
       document.body.classList.remove("boost","super");
       document.getElementById('game').style.display = 'none';
       document.getElementById('login').style.display = 'block';
+      upgrades = Object.fromEntries(Object.keys(shopItems).map(k => [k, 0])); // 업그레이드 초기화
     };
 
-    window.toggleShop = function () { 
+    window.toggleShop = function () {
       const shop = document.getElementById('shop');
-      shop.style.display = shop.style.display==='none'?'block':'none';
+      shop.style.display = shop.style.display === 'none' ? 'block' : 'none';
       renderShop();
     };
 
     async function renderShop() {
       const shopContainer = document.getElementById('shopItems');
       shopContainer.innerHTML = '';
-      Object.keys(shopItems).forEach(key=>{
+      Object.keys(shopItems).forEach(key => {
         const item = shopItems[key];
         const level = upgrades[key] || 0;
         const nextPrice = item.prices[level];
-        const maxed = (level >= item.prices.length);
+        const boughtMax = (!item.oneTime && level >= item.prices.length) || (item.oneTime && level >= 1);
         const div = document.createElement('div');
         div.classList.add('item');
-        div.innerHTML = `<p>${item.name} Lv.${level} ${maxed ? "(최대)" : "- "+nextPrice+"포인트"}</p>
-                         <button class="buy-btn" ${maxed?"disabled":""} onclick="buyItem('${key}')">구매</button>`;
+        div.innerHTML = `<p>${item.name} Lv.${level} ${boughtMax ? "(최대)" : "- " + nextPrice + "포인트"}</p>
+                         <button class="buy-btn" ${boughtMax ? "disabled" : ""} onclick="buyItem('${key}')">구매</button>`;
         shopContainer.appendChild(div);
       });
     }
 
-    window.buyItem = async function(itemKey){
+    window.buyItem = async function(itemKey) {
       const item = shopItems[itemKey];
-      let level = upgrades[itemKey] || 0;
-      if(level >= item.prices.length) return alert("최대 레벨입니다!");
+      const level = upgrades[itemKey] || 0;
+      if(item.oneTime && level >= 1) return alert("1회용 버프는 이미 구매했습니다!");
+      if(!item.oneTime && level >= item.prices.length) return alert("최대 레벨입니다!");
       const price = item.prices[level];
       if(points < price) return alert("포인트가 부족합니다!");
       points -= price;
-      // 1회용 버프는 레벨 0로 유지
-      if(item.oneTime) level = 0;
-      upgrades[itemKey] = level + 1;
-      await set(ref(db, `users/${nickname}`), { points, upgrades });
-      alert(`${item.name}을(를) Lv.${upgrades[itemKey]}로 업그레이드/구매했습니다!`);
+      upgrades[itemKey] += 1;
       updatePointDisplay();
       renderShop();
       applyUpgrades();
@@ -241,14 +249,19 @@
     function applyUpgrades() {
       const clickBtn = document.querySelector('.click-btn');
       clickBtn.classList.remove("auto-glow","double","sparkle");
-      if(upgrades.autoclick>=1){ clickBtn.classList.add('auto-glow'); clearInterval(window.autoclickInterval); window.autoclickInterval=setInterval(()=>clickButton(),1000/(1+upgrades.autoclick-1)); }
+      if(upgrades.autoclick >=1){
+        clickBtn.classList.add('auto-glow');
+        clearInterval(window.autoclickInterval);
+        window.autoclickInterval = setInterval(()=>clickButton(),1000/(1+upgrades.autoclick-1));
+      }
       if(upgrades.doubleClick>=1) clickBtn.classList.add('double');
       if(upgrades.sparkleTheme>=1) clickBtn.classList.add('sparkle');
-      if(upgrades.boost10s>=1) createBuffButton("10초 버프",10000,"boost");
-      if(upgrades.superBoost>=1) createBuffButton("30초 슈퍼버프",30000,"super");
+
+      if(upgrades.boost10s>=1) createBuffButton("10초 버프", 10000, "boost");
+      if(upgrades.superBoost>=1) createBuffButton("30초 슈퍼버프", 30000, "super");
     }
 
-    function createBuffButton(label,duration,type){
+    function createBuffButton(label, duration, type) {
       const gameDiv = document.getElementById("game");
       if(document.getElementById(type+"-btn")) return;
       const btn = document.createElement("button");
@@ -259,36 +272,46 @@
       btn.style.marginTop="10px";
       btn.style.borderRadius="8px";
       btn.onclick = ()=>{
-        if((type==="boost" && boostActive)||(type==="super" && superActive)) return alert("이미 버프가 활성화되어 있습니다!");
+        if((type==="boost" && boostActive)||(type==="super" && superActive))
+          return alert("이미 버프가 활성화되어 있습니다!");
         if(type==="boost") boostActive=true;
         if(type==="super") superActive=true;
         document.body.classList.add(type);
-        setTimeout(()=>{ if(type==="boost") boostActive=false; if(type==="super") superActive=false; document.body.classList.remove(type); },duration);
+        setTimeout(()=>{
+          if(type==="boost") boostActive=false;
+          if(type==="super") superActive=false;
+          document.body.classList.remove(type);
+        },duration);
       };
       gameDiv.appendChild(btn);
     }
   </script>
 </head>
+
 <body>
   <h1>🔥 클릭 게임 🔥</h1>
   <div id="login">
     <input id="nickname" placeholder="닉네임 입력" />
     <button onclick="startGame()">시작</button>
   </div>
+
   <div id="game" style="display:none;">
-    <p>⭐ 포인트: <span id="points">0</span></p>
-    <p style="font-size:1rem; margin-top:5px;">클릭 수: <span id="count">0</span></p>
+    <p id="countDisplay">클릭 수: <span id="count">0</span></p>
+    <h2 id="pointsDisplay">⭐ 포인트: <span id="points">0</span></h2>
     <button class="click-btn" onclick="clickButton()">클릭!</button>
     <button class="stop-btn" onclick="stopGame()">종료</button>
     <button class="shop-btn" onclick="toggleShop()">상점</button>
     <p id="status"></p>
   </div>
+
   <div id="shop" class="shop">
     <h3>🛒 상점</h3>
     <div id="shopItems"></div>
   </div>
 </body>
 </html>
+
+
 
 
 
