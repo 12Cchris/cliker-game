@@ -7,7 +7,7 @@
     body {
       font-family: "Pretendard", sans-serif;
       text-align: center;
-      margin-top: 40px;
+      margin-top: 60px;
       background: linear-gradient(135deg, #ff9a9e, #fad0c4);
       color: #333;
       transition: background 0.5s ease;
@@ -40,7 +40,6 @@
       animation: pulse 1s infinite;
     }
     @keyframes pulse { 0% { box-shadow: 0 0 10px rgba(255, 204, 0, 0.5); } 50% { box-shadow: 0 0 20px rgba(255, 204, 0, 1); } 100% { box-shadow: 0 0 10px rgba(255, 204, 0, 0.5); } }
-
     .click-btn.sparkle { position: relative; overflow: hidden; }
     .click-btn.sparkle::after {
       content: "";
@@ -91,51 +90,11 @@
     .auto-glow { animation: autoClickGlow 1s infinite alternate; }
     @keyframes autoClickGlow { 0% { box-shadow: 0 0 5px rgba(0,255,100,0.4); } 100% { box-shadow: 0 0 20px rgba(0,255,100,0.9); } }
 
-    /* 포인트와 클릭 수 강조 */
-    #pointsDisplay {
-      font-size: 2.2rem;
-      margin-bottom: 5px;
-      color: #333;
-    }
-    #countDisplay {
-      font-size: 1rem;
-      margin-bottom: 15px;
-      color: #555;
-    }
-
-    /* 버튼 가로형 유지 */
-    #buttonGroup {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
+    #game { display: flex; flex-direction: column; align-items: center; }
+    #countDisplay { font-size: 1rem; color: #555; margin-bottom:5px; }
+    #pointsDisplay { font-size: 2.2rem; color: #333; margin-bottom:15px; }
+    #buttonGroup { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:10px; }
   </style>
-</head>
-
-<body>
-  <h1>🔥 클릭 게임 🔥</h1>
-  <div id="login">
-    <input id="nickname" placeholder="닉네임 입력" />
-    <button onclick="startGame()">시작</button>
-  </div>
-
-  <div id="game" style="display:none;">
-    <h2 id="pointsDisplay">⭐ 포인트: <span id="points">0</span></h2>
-    <p id="countDisplay">클릭 수: <span id="count">0</span></p>
-    <div id="buttonGroup">
-      <button class="click-btn" onclick="clickButton()">클릭!</button>
-      <button class="stop-btn" onclick="stopGame()">종료</button>
-      <button class="shop-btn" onclick="toggleShop()">상점</button>
-    </div>
-    <p id="status"></p>
-  </div>
-
-  <div id="shop" class="shop">
-    <h3>🛒 상점</h3>
-    <div id="shopItems"></div>
-  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -155,97 +114,85 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    let nickname="", count=0, points=0, startTime=null, timerInterval=null, boostActive=false, superActive=false, upgrades={};
+    let nickname = "", count = 0, points = 0, startTime = null, timerInterval = null;
+    let boostActive = false, superActive = false, upgrades = {};
 
     const shopItems = {
       autoclick: { name: "자동 클릭기", prices: [500, 1000, 1500] },
       doubleClick: { name: "2배 클릭 강화", prices: [500, 1500, 3000] },
-      boost10s: { name: "10초 버프", prices: [100, 300, 500], oneTime:true },
-      superBoost: { name: "30초 슈퍼버프", prices: [1000, 3000, 5000], oneTime:true },
+      boost10s: { name: "10초 버프", prices: [100, 300, 500], oneTime: true },
+      superBoost: { name: "30초 슈퍼버프", prices: [1000, 3000, 5000], oneTime: true },
       sparkleTheme: { name: "반짝 테마", prices: [500, 1000, 2000] }
     };
 
-    async function startGame() {
-      nickname=document.getElementById('nickname').value.trim();
-      if(!nickname) return alert('닉네임을 입력해주세요.');
-      document.getElementById('login').style.display='none';
-      document.getElementById('game').style.display='block';
-      count=0; points=0; document.getElementById('count').innerText=count;
-      startTime=Date.now();
-      document.getElementById('timer')?.innerText='00:00';
-      timerInterval=setInterval(()=>{},250);
-      await loadUserData();
-      applyUpgrades();
-    }
+    window.startGame = async function () {
+      nickname = document.getElementById('nickname').value.trim();
+      if (!nickname) return alert('닉네임을 입력해주세요.');
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('game').style.display = 'flex';
+      count = 0;
+      points = 0;
+      document.getElementById('count').innerText = count;
+      document.getElementById('points').innerText = points;
+      startTime = Date.now();
+      timerInterval = setInterval(()=>{document.getElementById('timer')?.innerText = formatTime(Date.now()-startTime)}, 250);
+      upgrades = Object.fromEntries(Object.keys(shopItems).map(k=>[k,0]));
+    };
 
-    async function loadUserData(){
-      const userRef=ref(db, `users/${nickname}`);
-      const snapshot=await get(userRef);
-      if(snapshot.exists()){
-        const data=snapshot.val();
-        points=data.points||0;
-        upgrades=data.upgrades||{};
-      } else {
-        let initialUpgrades={};
-        Object.keys(shopItems).forEach(k=>initialUpgrades[k]=0);
-        await set(userRef, {points:0, upgrades:initialUpgrades});
-        points=0; upgrades=initialUpgrades;
-      }
-      document.getElementById('points').innerText=points;
-    }
+    function formatTime(ms){ const s=Math.floor(ms/1000); return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
 
-    function clickButton(){
-      let gain=1;
-      if(boostActive) gain*=3;
-      if(superActive) gain*=2;
+    window.clickButton = function(){
+      let gain = 1;
+      if(boostActive) gain *=3;
+      if(superActive) gain *=2;
       if(upgrades.doubleClick>=1) gain*=(1+upgrades.doubleClick);
-      count+=gain; points+=gain;
-      document.getElementById('count').innerText=count;
-      document.getElementById('points').innerText=points;
-    }
+      count += gain;
+      points += gain;
+      document.getElementById('count').innerText = count;
+      document.getElementById('points').innerText = points;
+    };
 
-    function stopGame(){
+    window.stopGame = function(){
       clearInterval(timerInterval);
       startTime=null; boostActive=false; superActive=false;
       document.body.classList.remove("boost","super");
       document.getElementById('game').style.display='none';
       document.getElementById('login').style.display='block';
       upgrades=Object.fromEntries(Object.keys(shopItems).map(k=>[k,0]));
-    }
+    };
 
-    function toggleShop(){
-      const shop=document.getElementById('shop');
-      shop.style.display=shop.style.display==='none'?'block':'none';
+    window.toggleShop = function(){
+      const shop = document.getElementById('shop');
+      shop.style.display = shop.style.display==='none'?'block':'none';
       renderShop();
-    }
+    };
 
     function renderShop(){
-      const shopContainer=document.getElementById('shopItems');
+      const shopContainer = document.getElementById('shopItems');
       shopContainer.innerHTML='';
       Object.keys(shopItems).forEach(key=>{
-        const item=shopItems[key];
-        const level=upgrades[key]||0;
-        const nextPrice=item.prices[level];
-        const boughtMax=(item.oneTime&&level>=1)||(!item.oneTime&&level>=item.prices.length);
-        const div=document.createElement('div');
-        div.classList.add('item');
+        const item=shopItems[key], level=upgrades[key]||0;
+        const nextPrice = item.prices[level];
+        const boughtMax = (item.oneTime && level>=1) || (!item.oneTime && level>=item.prices.length);
+        const div=document.createElement('div'); div.classList.add('item');
         div.innerHTML=`<p>${item.name} Lv.${level} ${boughtMax?"(최대)":"- "+nextPrice+"포인트"}</p>
                        <button class="buy-btn" ${boughtMax?"disabled":""} onclick="buyItem('${key}')">구매</button>`;
         shopContainer.appendChild(div);
       });
     }
 
-    function buyItem(itemKey){
-      const item=shopItems[itemKey];
-      const level=upgrades[itemKey]||0;
-      if(item.oneTime&&level>=1) return alert("1회용 버프는 이미 구매했습니다!");
-      if(!item.oneTime&&level>=item.prices.length) return alert("최대 레벨입니다!");
+    window.buyItem=function(key){
+      const item=shopItems[key], level=upgrades[key]||0;
+      if(item.oneTime && level>=1) return alert("1회용 버프는 이미 구매했습니다!");
+      if(!item.oneTime && level>=item.prices.length) return alert("최대 레벨입니다!");
       const price=item.prices[level];
       if(points<price) return alert("포인트가 부족합니다!");
-      points-=price; upgrades[itemKey]+=1;
-      document.getElementById('points').innerText=points;
-      renderShop(); applyUpgrades();
-    }
+      points-=price;
+      upgrades[key]+=1;
+      document.getElementById('points').innerText = points;
+      renderShop();
+      applyUpgrades();
+    };
 
     function applyUpgrades(){
       const clickBtn=document.querySelector('.click-btn');
@@ -265,19 +212,38 @@
       btn.style.background=(type==="super")?"#ffb300":"#fdcb6e";
       btn.style.color="#2d3436"; btn.style.marginTop="10px"; btn.style.borderRadius="8px";
       btn.onclick=()=>{
-        if((type==="boost"&&boostActive)||(type==="super"&&superActive)) return alert("이미 버프가 활성화되어 있습니다!");
+        if((type==="boost" && boostActive)||(type==="super" && superActive)) return alert("이미 버프가 활성화되어 있습니다!");
         if(type==="boost") boostActive=true;
         if(type==="super") superActive=true;
         document.body.classList.add(type);
-        setTimeout(()=>{
-          if(type==="boost") boostActive=false;
-          if(type==="super") superActive=false;
-          document.body.classList.remove(type);
-        },duration);
+        setTimeout(()=>{ if(type==="boost") boostActive=false; if(type==="super") superActive=false; document.body.classList.remove(type); },duration);
       };
       gameDiv.appendChild(btn);
     }
   </script>
+</head>
+<body>
+  <h1>🔥 클릭 게임 🔥</h1>
+  <div id="login">
+    <input id="nickname" placeholder="닉네임 입력" />
+    <button onclick="startGame()">시작</button>
+  </div>
+
+  <div id="game" style="display:none;">
+    <p id="countDisplay">클릭 수: <span id="count">0</span></p>
+    <h2 id="pointsDisplay">⭐ 포인트: <span id="points">0</span></h2>
+    <div id="buttonGroup">
+      <button class="click-btn" onclick="clickButton()">클릭!</button>
+      <button class="stop-btn" onclick="stopGame()">종료</button>
+      <button class="shop-btn" onclick="toggleShop()">상점</button>
+    </div>
+    <p id="status"></p>
+  </div>
+
+  <div id="shop" class="shop">
+    <h3>🛒 상점</h3>
+    <div id="shopItems"></div>
+  </div>
 </body>
 </html>
 
