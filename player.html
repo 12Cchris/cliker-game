@@ -111,7 +111,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, get, set, update, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getDatabase, ref, get, set, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA5V5sZy8AeeurQMSXo-iQgkaDdXN3ecio",
@@ -148,9 +148,8 @@ window.startGame = async function(){
   if(!nickname) return alert('닉네임을 입력해주세요.');
   document.getElementById('login').style.display='none';
   document.getElementById('game').style.display='flex';
-  count=0; points=0;
+  count=0;
   document.getElementById('count').innerText=count;
-  document.getElementById('points').innerText=points;
   startTime=Date.now();
   timerInterval=setInterval(updateTimer,250);
   await loadUserData();
@@ -166,20 +165,19 @@ function updateTimer(){
 }
 
 async function loadUserData(){
-  const userRef=ref(db,`users/${nickname}`);
-  const snapshot=await get(userRef);
+  const userRef = ref(db, `users/${nickname}`);
+  const snapshot = await get(userRef);
   if(snapshot.exists()){
-    const data=snapshot.val();
-    points=data.points||0;
-    upgrades=data.upgrades||{};
+    const data = snapshot.val();
+    points = data.points || 0;
+    upgrades = data.upgrades || {};
   } else {
-    let initialUpgrades={};
-    Object.keys(shopItems).forEach(k=>initialUpgrades[k]=0);
-    await set(userRef,{points:0,upgrades:initialUpgrades});
-    points=0;
-    upgrades=initialUpgrades;
+    upgrades = {};
+    Object.keys(shopItems).forEach(k => upgrades[k]=0);
+    await set(userRef, { points: 0, upgrades });
+    points = 0;
   }
-  document.getElementById('points').innerText=points;
+  document.getElementById('points').innerText = points;
 }
 
 window.clickButton=function(){
@@ -193,14 +191,19 @@ window.clickButton=function(){
   document.getElementById('points').innerText=points;
 }
 
-window.stopGame=function(){
+window.stopGame=async function(){
   clearInterval(timerInterval);
   startTime=null;
   boostActive=false; superActive=false;
   document.body.classList.remove("boost","super");
   document.getElementById('game').style.display='none';
   document.getElementById('login').style.display='block';
-  upgrades=Object.fromEntries(Object.keys(shopItems).map(k=>[k,0]));
+
+  // Firebase 저장
+  await set(ref(db, `users/${nickname}`), { points, upgrades });
+
+  // 초기화
+  upgrades = Object.fromEntries(Object.keys(shopItems).map(k=>[k,0]));
 }
 
 window.toggleShop=function(){
@@ -209,7 +212,7 @@ window.toggleShop=function(){
   renderShop();
 }
 
-async function renderShop(){
+function renderShop(){
   const shopContainer=document.getElementById('shopItems');
   shopContainer.innerHTML='';
   Object.keys(shopItems).forEach(key=>{
@@ -225,7 +228,7 @@ async function renderShop(){
   });
 }
 
-window.buyItem=async function(key){
+window.buyItem=function(key){
   const item=shopItems[key];
   const level=upgrades[key]||0;
   if(item.oneTime && level>=1) return alert("1회용 버프 이미 구매!");
@@ -308,6 +311,7 @@ function createBuffButton(label,duration,type){
 </div>
 </body>
 </html>
+
 
 
 
